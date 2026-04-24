@@ -13,6 +13,7 @@ import type {
 import type { AxiosError } from "axios";
 
 type EmployeeListRaw = Record<string, unknown>;
+type ClassSectionTeacherRaw = Record<string, unknown>;
 
 function normKey(k: string): string {
   return k.toLowerCase().replace(/[^a-z0-9]/g, "");
@@ -111,6 +112,35 @@ function toEmployeeListItem(raw: EmployeeListRaw): EmployeeListItem {
   };
 }
 
+function toTeacherListItems(rawItems: unknown[]): EmployeeListItem[] {
+  const byId = new Map<number, EmployeeListItem>();
+
+  for (const item of rawItems) {
+    const raw = (item ?? {}) as ClassSectionTeacherRaw;
+    const empId = pickNumberAny(raw, ["empId", "EmpId", "EMP_ID", "employeeId", "id"], 0);
+    if (empId <= 0) continue;
+
+    const current = byId.get(empId);
+    const subjectName = pickStringAny(raw, ["subjectName", "SubjectName"], "");
+    const isClassTeacher = pickBoolAny(raw, ["IsClassteacer", "IsClassTeacher", "isClassteacer", "isClassTeacher"], false);
+    const nextRoleParts = new Set<string>(current?.ROLE?.split(",").map((x) => x.trim()).filter(Boolean) ?? []);
+
+    if (subjectName) nextRoleParts.add("Subject_Teacher");
+    if (isClassTeacher) nextRoleParts.add("Class_Teacher");
+    if (nextRoleParts.size === 0) nextRoleParts.add("Teacher");
+
+    byId.set(empId, {
+      EMP_ID: empId,
+      NAME: pickStringAny(raw, ["name", "Name", "NAME"], current?.NAME ?? ""),
+      DISGNATION: current?.DISGNATION ?? "",
+      ROLE: Array.from(nextRoleParts).join(", "),
+      ACTIVE: current?.ACTIVE ?? true
+    });
+  }
+
+  return Array.from(byId.values()).sort((a, b) => a.NAME.localeCompare(b.NAME));
+}
+
 export async function getEmployees(filter: EmployeeListFilter): Promise<EmployeeListItem[]> {
   const { data } = await api.get("/employee", {
     params: {
@@ -129,15 +159,24 @@ export async function getTeachers(filter?: {
   className?: string;
   sectionName?: string;
 }): Promise<EmployeeListItem[]> {
-  const { data } = await api.get("/employee/teachers", {
-    params: {
-      className: filter?.className || undefined,
-      sectionName: filter?.sectionName || undefined
-    }
-  });
+  const className = filter?.className?.trim() || undefined;
+  const sectionName = filter?.sectionName?.trim() || undefined;
 
-  if (!Array.isArray(data)) return [];
-  return data.map((x) => toEmployeeListItem(x as EmployeeListRaw));
+  if (className && sectionName) {
+    const { data } = await api.get(
+      `/employee/class/${encodeURIComponent(className)}/section/${encodeURIComponent(sectionName)}/teachers`
+    );
+
+    if (!Array.isArray(data)) return [];
+    return toTeacherListItems(data);
+  }
+
+  return getEmployees({
+    search: "",
+    active: true,
+    page: 1,
+    pageSize: 100
+  });
 }
 
 type EmployeeDetailRaw = Record<string, unknown>;

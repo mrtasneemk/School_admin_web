@@ -1,8 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
-import { NavLink } from "react-router-dom";
 import { getCurrentStaffProfile, getStudentProfile } from "../api/profile";
 import { useAuth } from "../auth/AuthContext";
 import PageHeader from "../components/ui/PageHeader";
+import { resolveAppPath } from "../utils/navigation";
+import { formatRoleLabel } from "../utils/roles";
 
 function Tile({
   title,
@@ -14,7 +15,7 @@ function Tile({
   to: string;
 }) {
   return (
-    <NavLink to={to} style={{ textDecoration: "none" }}>
+    <a href={resolveAppPath(to)} style={{ textDecoration: "none" }}>
       <div className="card" style={{ height: "100%", display: "grid", gap: 10 }}>
         <h3 style={{ margin: 0 }}>{title}</h3>
         <div style={{ color: "var(--text)", fontFamily: "var(--font-serif)", fontSize: 22 }}>{title}</div>
@@ -23,7 +24,7 @@ function Tile({
         </p>
         <span className="help">Open</span>
       </div>
-    </NavLink>
+    </a>
   );
 }
 
@@ -51,13 +52,27 @@ export default function DashboardPage() {
   const pic = profileQuery.data?.picUrl ?? "";
 
   const tiles =
-    role === "Administrator"
+    role === "Administrator" || role === "Academic_Admin"
       ? [
+          {
+            title: "Academic Administration",
+            description: "Manage academic session, teaching assignments, results, and timetable workflows.",
+            to: "/academic"
+          },
+          ...(role === "Administrator"
+            ? [
           {
             title: "Employee Administration",
             description: "Create, update, assign classes/subjects, and manage employee records.",
             to: "/employees"
+          },
+          {
+            title: "Guardian Operations",
+            description: "Search guardians, map new admissions, link siblings, and reset guardian passwords.",
+            to: "/guardians"
           }
+              ]
+            : [])
         ]
       : [];
 
@@ -91,17 +106,17 @@ export default function DashboardPage() {
           </div>
           <div>
             <div style={{ fontFamily: "var(--font-serif)", fontSize: 20 }}>{name}</div>
-            <div className="help">{role ?? "User"}</div>
+            <div className="help">{formatRoleLabel(role) || "User"}</div>
           </div>
         </div>
 
         <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <NavLink to="/profile" className="btn" style={{ textDecoration: "none" }}>
+          <a href={resolveAppPath("/profile")} className="btn" style={{ textDecoration: "none" }}>
             Profile
-          </NavLink>
-          <NavLink to="/change-password" className="btn" style={{ textDecoration: "none" }}>
+          </a>
+          <a href={resolveAppPath("/change-password")} className="btn" style={{ textDecoration: "none" }}>
             Change Password
-          </NavLink>
+          </a>
         </div>
       </div>
 

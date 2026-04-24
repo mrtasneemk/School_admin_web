@@ -8,6 +8,7 @@ import { getRoles } from "../../api/lookup";
 import type { EmployeeListItem } from "../../types/employee";
 import Alert from "../../components/ui/Alert";
 import PageHeader from "../../components/ui/PageHeader";
+import { formatRoleLabel, formatRoleListLabel } from "../../utils/roles";
 
 function getApiErrorMessage(error: unknown): string {
   const axiosErr = error as AxiosError<{ message?: string; title?: string }>;
@@ -235,7 +236,7 @@ export default function EmployeesListPage() {
         )}
         {roleResult && (
           <Alert tone="success" title="Role Updated">
-            Employee #{roleResult.empId} assigned role <b>{roleResult.roleName}</b>
+            Employee #{roleResult.empId} assigned role <b>{formatRoleLabel(roleResult.roleName)}</b>
             {roleResult.createdUser ? " (new login user created)." : "."}
           </Alert>
         )}
@@ -254,7 +255,7 @@ export default function EmployeesListPage() {
                     <option value="">Select role</option>
                     {rolesQuery.data?.map((r) => (
                       <option key={r.roleId} value={r.roleId}>
-                        {r.roleName}
+                        {formatRoleLabel(r.roleName)}
                       </option>
                     ))}
                   </select>
@@ -302,7 +303,7 @@ export default function EmployeesListPage() {
                   <td>{e.EMP_ID}</td>
                   <td style={{ fontWeight: 700 }}>{e.NAME}</td>
                   <td>{e.DISGNATION}</td>
-                  <td>{e.ROLE || "-"}</td>
+                  <td>{formatRoleListLabel(e.ROLE) || "-"}</td>
                   <td>
                     {e.ACTIVE ? (
                       <span className="pill pill-ok">Active</span>

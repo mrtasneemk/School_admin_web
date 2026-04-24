@@ -152,7 +152,65 @@ a { color: inherit; }
   color: var(--muted-2);
 }
 
+.nav-group-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.nav-group-link {
+  flex: 1;
+  text-decoration: none;
+  border-radius: var(--radius-md);
+}
+
+.nav-group-link .nav-group-title {
+  margin: 0;
+  text-align: left;
+  border-radius: var(--radius-md);
+}
+
+.nav-group-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.nav-group-caret {
+  color: var(--muted-2);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.nav-group-header.active .nav-group-title,
+.nav-group-link:hover .nav-group-title,
+.nav-group-toggle:hover .nav-group-title,
+.nav-group-toggle:hover .nav-group-caret,
+.nav-group-header.active .nav-group-caret {
+  color: var(--text);
+}
+
+.nav-group-link:hover .nav-group-title {
+  background: rgba(37,99,235,.06);
+}
+
+.nav-group-toggle:hover {
+  background: rgba(37,99,235,.08);
+  border-color: rgba(37,99,235,.18);
+}
+
 .nav-group-items { display: grid; gap: 6px; }
+.nav-submenu { padding-left: 8px; }
+.nav-submenu.collapsed { display: none; }
 
 .nav a {
   display: flex;
@@ -447,6 +505,151 @@ th {
 tbody tr:nth-child(even) td { background: rgba(148,163,184,.05); }
 tbody tr:hover td { background: rgba(37,99,235,.06); }
 
+/* ---------- Timetable ---------- */
+.timetable-calendar {
+  display: grid;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.timetable-calendar-header,
+.timetable-row {
+  display: grid;
+  grid-template-columns: 84px repeat(var(--tt-columns, 8), minmax(40px, 1fr));
+  gap: 5px;
+  min-width: max-content;
+}
+
+.timetable-calendar-corner,
+.timetable-day,
+.timetable-period,
+.timetable-slot {
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.timetable-calendar-corner,
+.timetable-day {
+  padding: 8px;
+  font-weight: 800;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.timetable-period {
+  padding: 6px;
+  background: linear-gradient(180deg, rgba(6,182,212,.14), rgba(37,99,235,.04) 65%, var(--surface));
+  text-align: center;
+}
+
+.timetable-period.break {
+  border-color: rgba(249,115,22,.30);
+  background: linear-gradient(180deg, rgba(249,115,22,.14), rgba(249,115,22,.04) 65%, var(--surface));
+}
+
+.timetable-period-label {
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.timetable-period-time {
+  margin-top: 4px;
+  font-size: 8px;
+  color: var(--muted);
+}
+
+.timetable-slot {
+  min-height: 52px;
+  padding: 6px;
+  display: grid;
+  align-content: start;
+  gap: 4px;
+}
+
+.timetable-slot.filled {
+  background:
+    radial-gradient(120px 70px at 10% 0%, rgba(37,99,235,.10), transparent 70%),
+    linear-gradient(180deg, rgba(99,102,241,.08), rgba(6,182,212,.03)),
+    var(--surface);
+  border-color: rgba(37,99,235,.22);
+}
+
+.timetable-subject {
+  font-weight: 800;
+  color: var(--text);
+  font-size: 10px;
+  line-height: 1.25;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.5em;
+  text-align: center;
+}
+
+.timetable-meta,
+.timetable-empty {
+  font-size: 8px;
+  color: var(--muted);
+  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-align: center;
+}
+
+.timetable-empty {
+  color: var(--muted-2);
+}
+
+.timetable-day.current {
+  border-color: rgba(250,204,21,.42);
+  background: linear-gradient(180deg, rgba(250,204,21,.18), rgba(250,204,21,.05));
+}
+
+.timetable-slot.current {
+  border-color: rgba(250,204,21,.28);
+}
+
+.timetable-slot.current.filled {
+  background:
+    radial-gradient(120px 70px at 10% 0%, rgba(250,204,21,.18), transparent 72%),
+    linear-gradient(180deg, rgba(250,204,21,.08), rgba(37,99,235,.03)),
+    var(--surface);
+}
+
+.timetable-upload-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: nowrap;
+}
+
+.timetable-file-input {
+  flex: 1;
+  min-height: 38px;
+  padding: 7px 10px;
+}
+
+.timetable-upload-btn {
+  padding: 8px 12px;
+  min-height: 38px;
+  white-space: nowrap;
+}
+
 /* ---------- Login ---------- */
 .login-shell {
   min-height: 100vh;
@@ -489,4 +692,9 @@ tbody tr:hover td { background: rgba(37,99,235,.06); }
   .grid-3 { grid-template-columns: 1fr; }
   .grid-2 { grid-template-columns: 1fr; }
   .row-actions { flex-wrap: wrap; white-space: normal; }
+  .timetable-calendar-header,
+  .timetable-row { grid-template-columns: 78px repeat(var(--tt-columns, 8), minmax(38px, 1fr)); }
+  .timetable-upload-row {
+    flex-wrap: wrap;
+  }
 }

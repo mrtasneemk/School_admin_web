@@ -22,7 +22,6 @@ import {
   removeAssignedSubject
 } from "../api/employees";
 import { compileResults, getCompilePreview, publishResults, publishResultsPublic } from "../api/results";
-import { getLatestTimetable } from "../api/timetable";
 import type { EmployeeListItem, AssignClassDto, AssignSubjectDto } from "../types/employee";
 import type { ResultActionRequest, ResultCompilePreviewResponse } from "../types/result";
 
@@ -47,7 +46,8 @@ function hasAnyRole(roleText: string | undefined, roles: string[]): boolean {
   return roles.some((role) => actual.includes(role.toLowerCase()));
 }
 
-const TEACHER_ROLES = ["Teacher", "Class_Teacher"] as const;
+const MANAGEABLE_TEACHER_ROLES = ["Teacher", "Class_Teacher", "Subject_Teacher"] as const;
+const SUBJECT_ASSIGNMENT_ROLES = ["Teacher", "Class_Teacher", "Subject_Teacher"] as const;
 
 export default function AcademicAdminPage() {
   const qc = useQueryClient();
@@ -76,6 +76,7 @@ export default function AcademicAdminPage() {
     SectionName: "",
     SubjectName: ""
   });
+  const [timetableFileName, setTimetableFileName] = useState("");
 
   const yearsQuery = useQuery({
     queryKey: ["lookup", "academic-years"],
@@ -114,18 +115,14 @@ export default function AcademicAdminPage() {
     queryFn: () => getSubjects(subjectForm.ClassName),
     enabled: !!subjectForm.ClassName
   });
-  const timetableQuery = useQuery({
-    queryKey: ["timetable", "latest"],
-    queryFn: getLatestTimetable,
-    retry: 0
-  });
   const teachersQuery = useQuery({
     queryKey: ["teachers", teacherFilterClass, teacherFilterSection],
     queryFn: () =>
       getTeachers({
         className: teacherFilterClass || undefined,
         sectionName: teacherFilterSection || undefined
-      })
+      }),
+    retry: 0
   });
   const teacherOverviewQuery = useQuery({
     queryKey: ["employeeOverview", selectedTeacherId],
@@ -194,7 +191,7 @@ export default function AcademicAdminPage() {
     [preview, selectedPreviewAdmNo]
   );
   const teacherCandidates = useMemo(
-    () => (teachersQuery.data ?? []).filter((teacher) => hasAnyRole(teacher.ROLE, [...TEACHER_ROLES])),
+    () => (teachersQuery.data ?? []).filter((teacher) => hasAnyRole(teacher.ROLE, [...MANAGEABLE_TEACHER_ROLES])),
     [teachersQuery.data]
   );
   const selectedTeacher = useMemo(
@@ -202,7 +199,7 @@ export default function AcademicAdminPage() {
     [selectedTeacherId, teacherCandidates]
   );
   const canManageClasses = hasAnyRole(selectedTeacher?.ROLE, ["Class_Teacher"]);
-  const canManageSubjects = hasAnyRole(selectedTeacher?.ROLE, ["Teacher", "Class_Teacher"]);
+  const canManageSubjects = hasAnyRole(selectedTeacher?.ROLE, [...SUBJECT_ASSIGNMENT_ROLES]);
   const teacherRolesLabel = splitRoles(selectedTeacher?.ROLE).join(", ") || "No matching role";
   const teacherBusy =
     addClassMutation.isPending ||
@@ -298,7 +295,7 @@ export default function AcademicAdminPage() {
         <div className="card">
           <h3>Teacher Profiles</h3>
           <div className="stat">{teacherCandidates.length}</div>
-          <p className="help">Showing only users with role Teacher or Class_Teacher.</p>
+          <p className="help">Showing Teacher, Subject_Teacher, and Class_Teacher profiles.</p>
         </div>
       </div>
 
@@ -610,38 +607,9 @@ export default function AcademicAdminPage() {
 
       <div className="grid grid-2">
         <div className="card">
-          <h3>Latest Timetable XML</h3>
-          <p className="help" style={{ marginTop: 8 }}>
-            The live backend currently exposes a read-only latest timetable endpoint. This page can monitor the current payload, but upload needs a backend write endpoint before we can wire a real XML push flow.
-          </p>
-
-          {timetableQuery.isLoading ? <p className="help">Loading latest timetable...</p> : null}
-          {timetableQuery.isError ? (
-            <Alert tone="danger" title="Timetable Load Failed">
-              {getApiErrorMessage(timetableQuery.error)}
-            </Alert>
-          ) : null}
-          {timetableQuery.data ? (
-            <div className="grid" style={{ marginTop: 12 }}>
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                <span className="chip">Content-Type: {timetableQuery.data.contentType || "Unknown"}</span>
-                <span className="chip">{timetableQuery.data.isXml ? "XML detected" : "Non-XML payload"}</span>
-              </div>
-              <textarea
-                className="input"
-                value={timetableQuery.data.text.slice(0, 4000)}
-                readOnly
-                rows={14}
-                style={{ fontFamily: "Consolas, monospace", resize: "vertical" }}
-              />
-            </div>
-          ) : null}
-        </div>
-
-        <div className="card">
           <h3>Teacher Assignment Scope</h3>
           <p className="help" style={{ marginTop: 8 }}>
-            This profile shows only Teacher and Class_Teacher users. Select one to manage class and subject assignment.
+            This view shows Teacher, Subject_Teacher, and Class_Teacher users. Select both class and section to narrow the list.
           </p>
           <div className="grid grid-2" style={{ marginTop: 12 }}>
             <div>
@@ -708,12 +676,39 @@ export default function AcademicAdminPage() {
                 {!teachersQuery.isLoading && teacherCandidates.length === 0 ? (
                   <tr>
                     <td colSpan={5} style={{ color: "var(--muted)" }}>
-                      No Teacher or Class_Teacher profiles found for the current filter.
+                      {teacherFilterClass && !teacherFilterSection
+                        ? "Select a section to filter teachers for the chosen class."
+                        : "No Teacher, Subject_Teacher, or Class_Teacher profiles found for the current filter."}
                     </td>
                   </tr>
                 ) : null}
               </tbody>
             </table>
+          </div>
+        </div>
+
+        <div className="card">
+          <h3>Upload Latest Timetable XML</h3>
+          <p className="help" style={{ marginTop: 8 }}>
+            Choose the latest XML file here. The current backend only exposes a read endpoint, so the upload action will be enabled once the write API is available.
+          </p>
+          <div className="grid" style={{ marginTop: 12 }}>
+            <div>
+              <label className="label">Timetable XML File</label>
+              <input
+                className="input"
+                type="file"
+                accept=".xml,text/xml,application/xml"
+                onChange={(e) => setTimetableFileName(e.target.files?.[0]?.name ?? "")}
+              />
+              <p className="help">{timetableFileName ? `Selected: ${timetableFileName}` : "No file selected yet."}</p>
+            </div>
+            <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+              <button className="btn btn-primary" type="button" disabled>
+                Upload XML
+              </button>
+              <span className="chip">Backend upload endpoint pending</span>
+            </div>
           </div>
         </div>
       </div>
@@ -757,7 +752,7 @@ export default function AcademicAdminPage() {
             ) : null}
             {!canManageSubjects ? (
               <Alert tone="info" title="Subject Assignment Locked">
-                This profile is not a <b>Teacher</b> or <b>Class_Teacher</b>, so subject assignment is hidden.
+                This profile is not a <b>Teacher</b>, <b>Subject_Teacher</b>, or <b>Class_Teacher</b>, so subject assignment is hidden.
               </Alert>
             ) : null}
           </div>

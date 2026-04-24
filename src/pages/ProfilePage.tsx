@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { getCurrentStaffProfile, getStudentProfile } from "../api/profile";
 import { useAuth } from "../auth/AuthContext";
 import PageHeader from "../components/ui/PageHeader";
+import { formatRoleLabel } from "../utils/roles";
 
 export default function ProfilePage() {
   const { role, username, userId } = useAuth();
@@ -16,7 +17,7 @@ export default function ProfilePage() {
           displayName: s.SNAME || username || "Student",
           picUrl: s.PICURL,
           fields: [
-            ["Role", role ?? "Student"],
+            ["Role", formatRoleLabel(role) || "Student"],
             ["Name", s.SNAME]
           ] as Array<[string, string]>
         };
@@ -28,7 +29,7 @@ export default function ProfilePage() {
           displayName: e.NAME || username || role || "User",
           picUrl: e.PICURL,
           fields: [
-            ["Role", role ?? "User"],
+            ["Role", formatRoleLabel(role) || "User"],
             ["Name", e.NAME],
             ["Designation", e.DISGNATION],
             ["Mobile", e.MOBILE],
@@ -40,7 +41,7 @@ export default function ProfilePage() {
       return {
         displayName: username || role || "User",
         picUrl: "",
-        fields: [["Role", role ?? "User"], ["Username", username ?? ""]]
+        fields: [["Role", formatRoleLabel(role) || "User"], ["Username", username ?? ""]]
       };
     },
     staleTime: 5 * 60 * 1000,
@@ -73,7 +74,7 @@ export default function ProfilePage() {
             </div>
             <div>
               <div style={{ fontFamily: "var(--font-serif)", fontSize: 22 }}>{profileQuery.data?.displayName ?? "User"}</div>
-              <div className="help">{role ?? "User"}</div>
+              <div className="help">{formatRoleLabel(role) || "User"}</div>
             </div>
           </div>
 

@@ -1,14 +1,16 @@
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { useTheme } from "../theme/ThemeContext";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { getCurrentStaffProfile, getStudentProfile } from "../api/profile";
 import SidebarNav from "./SidebarNav";
+import { formatRoleLabel } from "../utils/roles";
 
 export default function AppLayout() {
   const { username, logout, role, userId, admNo } = useAuth();
   const { effectiveMode, toggle } = useTheme();
   const navigate = useNavigate();
+  const location = useLocation();
   const qc = useQueryClient();
 
   function handleLogout() {
@@ -57,7 +59,7 @@ export default function AppLayout() {
           <header className="topbar">
             <div className="topbar-title">
               <h2>{profileQuery.data?.displayName ?? username ?? "User"}</h2>
-              <p>{role ?? "User"}</p>
+              <p>{formatRoleLabel(role) || "User"}</p>
             </div>
 
             <div className="topbar-actions">
@@ -87,7 +89,9 @@ export default function AppLayout() {
             </div>
           </header>
 
-          <Outlet />
+          <div key={location.pathname}>
+            <Outlet />
+          </div>
         </main>
       </div>
     </div>
